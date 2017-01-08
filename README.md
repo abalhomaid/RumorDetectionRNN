@@ -64,6 +64,5 @@ Training Step: 3  | total loss: 0.68456
 Training Step: 4  | total loss: 0.69145  
 | Adam | epoch: 001 | loss: 0.69145 - acc: 0.5206 | val_loss: 0.69413 - val_acc: 0.4880 -- iter: 117/117  
 Training Step: 4  | total loss: 0.69145  
-| Adam | epoch: 001 | loss: 0.69145 - acc: 0.5206 | val_loss: 0.69413 - val_acc: 0.4880 -- iter: 117/117  
---  
+| Adam | epoch: 001 | loss: 0.69145 - acc: 0.5206 | val_loss: 0.69413 - val_acc: 0.4880 -- iter: 117/117    
 </code>
