@@ -11,21 +11,22 @@ from gensim.corpora import MmCorpus
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
-CORPUS_FILE_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/rumorCorpus.mm'
-DICTIONARY_FILE_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/rumorDictionary.dict'
-DOC2VEC_FILE_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/rumorModelDoc2Vec.bin'
-INPUT_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/twitter_json'
-RUMOR_TF_INPUTJSON = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/tensorInput.json'
-RUMOR_TF_INPUTPICKLE = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/tensorInput.pkl'
-TFIDF_FILE_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/rumorTfidf.tfidf_model'
-TWITTER_LABEL_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/twitter_label.txt'
-WORD2VEC_FILE_PATH = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/rumorModelWord2Vec.txt'
+CORPUS_FILE_PATH = r'../resources/rumorCorpus.mm'
+DICTIONARY_FILE_PATH = r'../resources//rumorDictionary.dict'
+DOC2VEC_FILE_PATH = r'../resources/rumorModelDoc2Vec.bin'
+INPUT_PATH = r'../rumor/twitter_json'
+RUMOR_TF_INPUTJSON = r'../resources/tensorInput.json'
+RUMOR_TF_INPUTPICKLE = r'../resources/tensorInput.pkl'
+TEST_SET_FILE_PATH = r'../resources/testSet_twitter.txt'
+TFIDF_FILE_PATH = r'../resources/rumorTfidf.tfidf_model'
+TRAIN_SET_FILE_PATH = r'../resources/testSet_twitter.txt'
+TWITTER_LABEL_PATH = r'../resources/twitter_label.txt'
+WORD2VEC_FILE_PATH = r'../resources/rumorModelWord2Vec.txt'
+
 
 def main():
-    # loadLabels(TWITTER_LABEL_PATH)
     # createTensorInput(RUMOR_TF_INPUTPICKLE)
     loadTensorInput(RUMOR_TF_INPUTPICKLE)
-    # testTfidfInput()
 
 
 
@@ -90,19 +91,16 @@ def createTensorInput(inputFile):
     # create idf from corpus
     # write idf, ground truth to file, using pickle
 
-    trainSetFilePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/testSet_twitter.txt'
     trainSetList = set()
-
-    testSetFilePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/testSet_twitter.txt'
     testSetList = set()
 
     # load train filenames into list
-    with open(trainSetFilePath, 'rb') as f:
+    with open(TRAIN_SET_FILE_PATH, 'rb') as f:
         for line in f:
             trainSetList.add(line.rstrip())
 
     # load test filenames into list
-    with open(testSetFilePath, 'rb') as f:
+    with open(TEST_SET_FILE_PATH, 'rb') as f:
         for line in f:
             testSetList.add(line.rstrip())
 
@@ -204,7 +202,7 @@ def testTfidfInput():
     print(tfidf)
 
 
-    # for line in open(r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/twitter_json/Airfrance.json'):
+    # for line in open(r'../resources/twitter_json/Airfrance.json'):
     #     line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
     #     print(line)
 

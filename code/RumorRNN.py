@@ -18,14 +18,12 @@ Links:
 """
 from __future__ import division, print_function, absolute_import
 
-import tensorflow as tf
 import tflearn
 
-from preprocessData import *
+from code.preprocessData import *
 from tflearn.data_utils import to_categorical, pad_sequences
-from tflearn.datasets import imdb
 
-TENSOR_MODEL = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumor/tensorModel.model'
+TENSOR_MODEL = r'../resources/tensorModel.model'
 
 
 
