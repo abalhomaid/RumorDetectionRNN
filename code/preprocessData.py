@@ -25,8 +25,7 @@ WORD2VEC_FILE_PATH = r'../resources/rumorModelWord2Vec.txt'
 
 
 def main():
-    # createTensorInput(RUMOR_TF_INPUTPICKLE)
-    loadTensorInput(RUMOR_TF_INPUTPICKLE)
+    createTensorInput(RUMOR_TF_INPUTPICKLE)
 
 
 
