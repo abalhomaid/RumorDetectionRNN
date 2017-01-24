@@ -4,7 +4,8 @@
 
 1. gensim
 2. tflearn
-3. pickle
+3. keras
+4. pickle
 
 ## Algorithm
 
@@ -49,20 +50,19 @@
 
 ## Result
 
-Excluding tensorflow warnings
+Train on 875 samples, validate on 117 samples
 
 <code>
 Training samples: 117  
 Validation samples: 875  
 
-Training Step: 1  
-| Adam | epoch: 000 | loss: 0.00000 - acc: 0.0000 -- iter: 032/117  
-Training Step: 2  | total loss: 0.63003  
-| Adam | epoch: 000 | loss: 0.63003 - acc: 0.5398 -- iter: 064/117  
-Training Step: 3  | total loss: 0.68456  
-| Adam | epoch: 000 | loss: 0.68456 - acc: 0.4836 -- iter: 096/117  
-Training Step: 4  | total loss: 0.69145  
-| Adam | epoch: 001 | loss: 0.69145 - acc: 0.5206 | val_loss: 0.69413 - val_acc: 0.4880 -- iter: 117/117  
-Training Step: 4  | total loss: 0.69145  
-| Adam | epoch: 001 | loss: 0.69145 - acc: 0.5206 | val_loss: 0.69413 - val_acc: 0.4880 -- iter: 117/117    
+7s - loss: 0.6813 - acc: 0.5497 - val_loss: 0.9414 - val_acc: 0.2735
+Epoch 2/5
+2s - loss: 0.6695 - acc: 0.5817 - val_loss: 0.7839 - val_acc: 0.2393
+Epoch 3/5
+2s - loss: 0.6664 - acc: 0.5840 - val_loss: 0.9430 - val_acc: 0.2650
+Epoch 4/5
+2s - loss: 0.6634 - acc: 0.5863 - val_loss: 0.8857 - val_acc: 0.2650
+Epoch 5/5
+2s - loss: 0.6620 - acc: 0.5874 - val_loss: 0.9371 - val_acc: 0.2735
 </code>
