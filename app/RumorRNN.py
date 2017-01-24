@@ -56,20 +56,7 @@ def trainModelKeras():
 
     # Python 2
     trainX, trainY, testX, testY = loadTensorInput(RUMOR_TF_INPUTPICKLE)
-
-    # # Python 3, change element from dict_values to list
-    # for i in trainX:
-    #     trainX[i] = list(i.values())
-    #
-    # for i in trainY:
-    #     trainY[i] = list(i.values())
-    #
-    # for i in testX:
-    #     testX[i] = list(i.values())
-    #
-    # for i in testY:
-    #     testY[i] = list(i.values())
-
+    
     # Data preprocessing
     # Sequence padding
     trainX = keraspad_sequences(trainX, maxlen=100, padding='post', value=0.)
