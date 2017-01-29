@@ -19,6 +19,7 @@ Links:
 from __future__ import division, print_function, absolute_import
 
 import tflearn
+import matplotlib.pyplot as plt
 
 from app.preprocessData import *
 from tflearn.data_utils import to_categorical, pad_sequences
@@ -26,6 +27,7 @@ from keras.preprocessing.sequence import pad_sequences as keraspad_sequences
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers import Dense, PReLU, Dropout, Embedding, LSTM
+
 
 TENSOR_MODEL = r'../resources/tensorModel.model'
 
@@ -56,7 +58,7 @@ def trainModelKeras():
 
     # Python 2
     trainX, trainY, testX, testY = loadTensorInput(RUMOR_TF_INPUTPICKLE)
-    
+
     # Data preprocessing
     # Sequence padding
     trainX = keraspad_sequences(trainX, maxlen=100, padding='post', value=0.)
@@ -72,12 +74,31 @@ def trainModelKeras():
 
     # # Network building
     model = Sequential()
-    model.add(Embedding(input_dim = 100, output_dim = 128))
+    model.add(Embedding(input_dim = 100, output_dim=128))
     model.add(LSTM(output_dim = 100))
     model.add(Dense(output_dim = 2, activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    model.fit(trainX, trainY, validation_data=(testX, testY), verbose=2, batch_size=32, nb_epoch=5)
+    history = model.fit(trainX, trainY, validation_data=(testX, testY), verbose=2, batch_size=32, nb_epoch=200)
     model.save(TENSOR_MODEL)
+
+
+    # summarize history for accuracy
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
     print('success')
 
 def trainModelTFLearn():

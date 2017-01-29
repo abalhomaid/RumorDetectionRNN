@@ -50,6 +50,8 @@
 
 ## Result
 
+5 epochs
+
 Train on 875 samples, validate on 117 samples
 
 <code>
@@ -66,3 +68,21 @@ Epoch 4/5
 Epoch 5/5
 2s - loss: 0.6620 - acc: 0.5874 - val_loss: 0.9371 - val_acc: 0.2735
 </code>
+
+
+200 epochs
+
+<code>
+Epoch 196/200
+2s - loss: 0.5914 - acc: 0.6526 - val_loss: 1.0456 - val_acc: 0.3761
+Epoch 197/200
+2s - loss: 0.5843 - acc: 0.6651 - val_loss: 1.1080 - val_acc: 0.3590
+Epoch 198/200
+2s - loss: 0.5659 - acc: 0.6834 - val_loss: 1.0969 - val_acc: 0.3504
+Epoch 199/200
+2s - loss: 0.5607 - acc: 0.6800 - val_loss: 1.0305 - val_acc: 0.3846
+Epoch 200/200
+2s - loss: 0.5562 - acc: 0.6834 - val_loss: 1.0994 - val_acc: 0.3590
+success
+</code>
+Process finished with exit code 0
