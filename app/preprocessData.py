@@ -14,7 +14,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 CORPUS_FILE_PATH = r'../resources/rumorCorpus.mm'
 DICTIONARY_FILE_PATH = r'../resources/rumorDictionary.dict'
 DOC2VEC_FILE_PATH = r'../resources/rumorModelDoc2Vec.bin'
-INPUT_PATH = r'../rumor/twitter_json'
+DATA_PATH = r'../rumor/twitter_json'
 RUMOR_TF_INPUTJSON = r'../resources/tensorInput.json'
 RUMOR_TF_INPUTPICKLE = r'../resources/tensorInput.pkl'
 TEST_SET_FILE_PATH = r'../rumor/testSet_twitter.txt' # given file
@@ -88,11 +88,11 @@ def loadTensorInput(inputFile):
         for idx, i in enumerate(trainX):
             trainX[idx] = list(trainX[idx].values())
         for idx, i in enumerate(trainY):
-            trainY[idx] = list(trainY[idx].values())
+            trainY[idx] = int(trainY[idx].get('label'))
         for idx, i in enumerate(testX):
             testX[idx] = list(testX[idx].values())
         for idx, i in enumerate(testY):
-            testY[idx] = list(testY[idx].values())
+            testY[idx] = int(testY[idx].get('label'))
 
         print('Success')
 
@@ -123,12 +123,12 @@ def createTensorInput(inputFile):
 
 
         fname = 'E101.json'
-        corpus = createCorpus(os.path.join(INPUT_PATH, fname))
+        corpus = createCorpus(os.path.join(DATA_PATH, fname))
         tfidf = createTfidf(corpus)
         line = tfidf.idfs, {'label': LABEL_DICT[fname.split('.')[0]]}
 
-        for fname in os.listdir(INPUT_PATH):
-            corpus = createCorpus(os.path.join(INPUT_PATH, fname))
+        for fname in os.listdir(DATA_PATH):
+            corpus = createCorpus(os.path.join(DATA_PATH, fname))
             tfidf = createTfidf(corpus)
             line = tfidf.idfs, {'label': LABEL_DICT[fname.split('.')[0]]}
 
@@ -155,7 +155,7 @@ def createTfidf(corpus, tfidfSavePath = None):
 
 def createCorpus(inputPath):
     # Create corpus from inputPath
-    # text = rumorTextCorpus(INPUT_PATH)
+    # text = rumorTextCorpus(DATA_PATH)
     text = corpora.TextCorpus(inputPath)
 
     # Uncomment to save dictionary
@@ -173,7 +173,7 @@ def createCorpusSingleFile(inputPath, dictionarySavePath, corpusSavePath):
     MmCorpus.serialize(corpusSavePath, text)
 
 def createWord2Vec():
-    sentences = MySentences(INPUT_PATH)  # a memory-friendly iterator
+    sentences = MySentences(DATA_PATH)  # a memory-friendly iterator
     print('SENTENCES:', sentences)
     model = models.Word2Vec(sentences)
     model.save_word2vec_format(WORD2VEC_FILE_PATH, None, False)
