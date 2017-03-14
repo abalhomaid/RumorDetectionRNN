@@ -39,33 +39,38 @@
 
 ## To create folder resources:
 
-1. run preprocessData.py main function (createTensorInput(inputFile))
+1. run preprocessData.py
 
 
 ## To train neural network:
 
-1. run RumorRNN.py main function 
-
-
+1. run RumorRNN.py
 
 ## Result
-
-5 epochs
 
 Train on 875 samples, validate on 118 samples
 
 20 epochs
 
 <code>
+875/875 [==============================] - 15s - loss: 0.5089 - acc: 0.7646 - val_loss: 0.4852 - val_acc: 0.7542
+Epoch 13/20
+875/875 [==============================] - 15s - loss: 0.3863 - acc: 0.8274 - val_loss: 0.7699 - val_acc: 0.7203
+Epoch 14/20
+875/875 [==============================] - 15s - loss: 0.2909 - acc: 0.8720 - val_loss: 0.8753 - val_acc: 0.7373
+Epoch 15/20
+875/875 [==============================] - 15s - loss: 0.1825 - acc: 0.9314 - val_loss: 1.3211 - val_acc: 0.7119
+Epoch 16/20
+875/875 [==============================] - 15s - loss: 0.1228 - acc: 0.9543 - val_loss: 1.5710 - val_acc: 0.6695
 Epoch 17/20
-875/875 [==============================] - 14s - loss: 0.0627 - acc: 0.9840 - val_loss: 0.6850 - val_acc: 0.5678
+875/875 [==============================] - 15s - loss: 0.0728 - acc: 0.9794 - val_loss: 2.1107 - val_acc: 0.6525
 Epoch 18/20
-875/875 [==============================] - 14s - loss: 0.0600 - acc: 0.9863 - val_loss: 0.6829 - val_acc: 0.6186
+875/875 [==============================] - 15s - loss: 0.0792 - acc: 0.9749 - val_loss: 2.3427 - val_acc: 0.6695
 Epoch 19/20
-875/875 [==============================] - 14s - loss: 0.0595 - acc: 0.9817 - val_loss: 0.6905 - val_acc: 0.6186
+875/875 [==============================] - 15s - loss: 0.0710 - acc: 0.9783 - val_loss: 2.8942 - val_acc: 0.6356
 Epoch 20/20
-875/875 [==============================] - 15s - loss: 0.3526 - acc: 0.8960 - val_loss: 0.6753 - val_acc: 0.5932
+875/875 [==============================] - 15s - loss: 0.0675 - acc: 0.9794 - val_loss: 1.9913 - val_acc: 0.6695
 118/118 [==============================] - 0s
-Accuracy: 59.32%
+Accuracy: 66.95%
 </code>
 Process finished with exit code 0
