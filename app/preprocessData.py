@@ -3,42 +3,34 @@ import re
 import logging
 import os
 import pickle
-import sys
-from os.path import basename
-from gensim import corpora, models, utils
+import numpy as np
+
+from gensim import corpora, utils
 from gensim.corpora import MmCorpus
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
 CORPUS_FILE_PATH = r'../resources/rumorCorpus.mm'
-DICTIONARY_FILE_PATH = r'../resources/rumorDictionary.dict'
-DOC2VEC_FILE_PATH = r'../resources/rumorModelDoc2Vec.bin'
+DICTIONARY_FILE_PATH = r'../resources/rumorDictionary.pkl'
 DATA_PATH = r'../rumor/twitter_json'
-RUMOR_TF_INPUTJSON = r'../resources/tensorInput.json'
 RUMOR_TF_INPUTPICKLE = r'../resources/tensorInput.pkl'
 TEST_SET_FILE_PATH = r'../rumor/testSet_twitter.txt' # given file
-TFIDF_FILE_PATH = r'../resources/rumorTfidf.tfidf_model'
 TRAIN_SET_FILE_PATH = r'../rumor/trainSet_twitter.txt' # given file
 TWITTER_LABEL_PATH = r'../rumor/twitter_label.txt' # given file
-WORD2VEC_FILE_PATH = r'../resources/rumorModelWord2Vec.txt'
+
+MAX_SEQUENCE_LENGTH = 1000
+MAX_NB_WORDS = 20000
+EMBEDDING_DIM = 100
 
 
 def main():
-    createTensorInput(RUMOR_TF_INPUTPICKLE)
-    # loadTensorInput(RUMOR_TF_INPUTPICKLE)
+    # createInputKeras(RUMOR_TF_INPUTPICKLE)
+    loadInput(RUMOR_TF_INPUTPICKLE)
+    # createInput(RUMOR_TF_INPUTPICKLE)
     print('Done preprocessing.')
-
-
-
-def loadDictionary(dictionaryPath):
-    return corpora.Dictionary.load(dictionaryPath)
-
-def loadCorpus(corpusPath):
-    return MmCorpus(corpusPath)
-
-def loadTfidf(tfidfPath):
-    return models.TfidfModel.load(tfidfPath)
 
 """load all labels (true/false) for training and test set into LABEL_DICT"""
 def loadLabels(labelPath, write = 0):
@@ -53,56 +45,29 @@ def loadLabels(labelPath, write = 0):
 
     return LABEL_DICT
 
-
-def loadTensorInput(inputFile):
+def loadInput(inputFile):
     # load pickle
     with open(inputFile, "rb") as input:
-        i = 0
-
         print('loading input\n')
 
-        # PICKLE load
+        outputList = pickle.load(input)
+        # X_train, y_train = zip(*outputList)
+        X_train, y_train = outputList
 
         outputList = pickle.load(input)
-        trainX, trainY = zip(*outputList)
+        # X_test, y_test = zip(*outputList)
+        X_test, y_test = outputList
 
-        outputList = pickle.load(input)
-        testX, testY = zip(*outputList)
+        X_train = np.asarray(X_train)
+        y_train = np.asarray(y_train)
+        X_test = np.asarray(X_test)
+        y_test = np.asarray(y_test)
 
-        trainX = list(trainX)
-        trainY = list(trainY)
-        testX = list(testX)
-        testY = list(testY)
+        return X_train, y_train, X_test, y_test
 
-        # Python 2
-        # for idx, i in enumerate(trainX):
-        #     trainX[idx] = trainX[idx].values()
-        # for idx, i in enumerate(trainY):
-        #     trainY[idx] = trainY[idx].values()
-        # for idx, i in enumerate(testX):
-        #     testX[idx] = testX[idx].values()
-        # for idx, i in enumerate(testY):
-        #     testY[idx] = testY[idx].values()
 
-        # Python 3
-        for idx, i in enumerate(trainX):
-            trainX[idx] = list(trainX[idx].values())
-        for idx, i in enumerate(trainY):
-            trainY[idx] = int(trainY[idx].get('label'))
-        for idx, i in enumerate(testX):
-            testX[idx] = list(testX[idx].values())
-        for idx, i in enumerate(testY):
-            testY[idx] = int(testY[idx].get('label'))
-
-        print('Success')
-
-    return trainX, trainY, testX, testY
-
-def createTensorInput(inputFile):
-    # create corpus from tweets
-    # create idf from corpus
-    # write idf, ground truth to file, using pickle
-
+""" Creates model input using gensim utilities """
+def createInput(inputFile):
     trainSetList = set()
     testSetList = set()
 
@@ -116,151 +81,145 @@ def createTensorInput(inputFile):
         for line in f:
             testSetList.add(line.rstrip())
 
+    # load corpus if it exists in path, otherwise create it
+    if (os.path.exists(CORPUS_FILE_PATH)):
+        corpus = corpora.MmCorpus(CORPUS_FILE_PATH)
+    else:
+        corpus = createCorpus(DATA_PATH)
+
+    # load dictionary
+    if (os.path.exists(DICTIONARY_FILE_PATH)):
+        dictionary = loadDictionary(DICTIONARY_FILE_PATH)
+
     with open(inputFile, "wb") as output:
         LABEL_DICT = loadLabels(TWITTER_LABEL_PATH)
         trainOutputList = []
         testOutputList = []
 
+        # dictionary.filter_n_most_frequent(10)
+        keep_n_most_frequent(dictionary, 10)
 
-        fname = 'E101.json'
-        corpus = createCorpus(os.path.join(DATA_PATH, fname))
-        tfidf = createTfidf(corpus)
-        line = tfidf.idfs, {'label': LABEL_DICT[fname.split('.')[0]]}
+        tfidf = get_complete_tfidf(corpus, dictionary)
+        tfidf = [[t[1] for t in l] for l in tfidf]
 
-        for fname in os.listdir(DATA_PATH):
-            corpus = createCorpus(os.path.join(DATA_PATH, fname))
-            tfidf = createTfidf(corpus)
-            line = tfidf.idfs, {'label': LABEL_DICT[fname.split('.')[0]]}
+        for idx, fname in enumerate(os.listdir(DATA_PATH)):
+            # write list of word ids
+            # document = getSequenceFromFile(os.path.join(DATA_PATH, fname))
+            # document = [corpus.dictionary.token2id.get(w) for w in document]
+            # line = (document, int(LABEL_DICT[fname.split('.')[0]]))
 
-            # need bytes() method in Windows OS
             if bytes(fname, encoding='utf-8') in trainSetList:
+                line = (tfidf[idx], int(LABEL_DICT[fname.split('.')[0]]))
                 trainOutputList.append(line)
             else:
+                line = (tfidf[idx], int(LABEL_DICT[fname.split('.')[0]]))
                 testOutputList.append(line)
-
-            # write data json
-            # json.dumps(line, output)
 
         # write data pickle
         pickle.dump(trainOutputList, output)
         pickle.dump(testOutputList, output)
 
-def createTfidf(corpus, tfidfSavePath = None):
-    tfidf = models.TfidfModel(corpus)
 
-    if tfidfSavePath is not None:
-        tfidf.save(tfidfSavePath)
+    # need to return X -> numpy of lists similar to imdb.load
 
-    return tfidf
+""" Creates model input using keras utilities """
+def createInputKeras(inputFile):
+    X_train = []
+    y_train = []
+    X_test = []
+    y_test = []
+    LABEL_DICT = loadLabels(TWITTER_LABEL_PATH)
+
+    # load train filenames into list
+    with open(TRAIN_SET_FILE_PATH, 'r') as f:
+        for line in f:
+            file_path = os.path.join(DATA_PATH, line.rstrip())
+            X_train.append(getTextFromFile(file_path))
+            y_train.append(int(LABEL_DICT[line.rstrip().split('.')[0]]))
+
+    # load test filenames into list
+    with open(TEST_SET_FILE_PATH, 'r') as f:
+        for line in f:
+            file_path = os.path.join(DATA_PATH, line.rstrip())
+            X_test.append(getTextFromFile(file_path))
+            y_test.append(int(LABEL_DICT[line.rstrip().split('.')[0]]))
+
+
+    tokenizer_train = Tokenizer(nb_words=MAX_NB_WORDS)
+    tokenizer_test = Tokenizer(nb_words=MAX_NB_WORDS)
+
+    tokenizer_train.fit_on_texts(X_train)
+    tokenizer_test.fit_on_texts(X_test)
+
+    sequences_train = tokenizer_train.texts_to_sequences(X_train)
+    sequences_test = tokenizer_test.texts_to_sequences(X_test)
+
+    word_index = tokenizer_train.word_index
+    print('Found %s unique train tokens.' % len(word_index))
+
+    X_train = pad_sequences(sequences_train, maxlen=MAX_SEQUENCE_LENGTH)
+    X_test = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
+
+    print('Shape of data_train tensor:', X_train.shape)
+
+    with open(inputFile, "wb") as output:
+        pickle.dump((X_train, y_train), output)
+        pickle.dump((X_test, y_test), output)
 
 def createCorpus(inputPath):
-    # Create corpus from inputPath
-    # text = rumorTextCorpus(DATA_PATH)
-    text = corpora.TextCorpus(inputPath)
+    corpus = RumorTextCorpus(inputPath)
+    MmCorpus.serialize(CORPUS_FILE_PATH, corpus)
+    corpus.dictionary.save(DICTIONARY_FILE_PATH)
+    return corpus
 
-    # Uncomment to save dictionary
-    # text.dictionary.save(DICTIONARY_FILE_PATH)
+def getSequenceFromFile(file_path):
+    W = []
+    for line in open(file_path):
+        line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
+        jsonObject = json.loads(line)
+        w = jsonObject['text'].split()
+        W.extend(w)
+    return W
 
-    # Uncomment to save corpus
-    # MmCorpus.serialize(CORPUS_FILE_PATH, text)
+def getTextFromFile(file_path):
+    W = ''
+    for line in open(file_path):
+        line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
+        jsonObject = json.loads(line)
+        w = jsonObject['text']
+        W = W + ' ' + w
+    W = W[1:]
+    return W
 
-    return text
+def loadDictionary(dictionaryPath):
+    return corpora.Dictionary.load(dictionaryPath)
 
-def createCorpusSingleFile(inputPath, dictionarySavePath, corpusSavePath):
-    text = rumorTextCorpus(inputPath)
-    text.dictionary.save(dictionarySavePath)
-    # save corpus
-    MmCorpus.serialize(corpusSavePath, text)
+def loadCorpus(corpusPath):
+    return MmCorpus(corpusPath)
 
-def createWord2Vec():
-    sentences = MySentences(DATA_PATH)  # a memory-friendly iterator
-    print('SENTENCES:', sentences)
-    model = models.Word2Vec(sentences)
-    model.save_word2vec_format(WORD2VEC_FILE_PATH, None, False)
-
-def createDoc2Vec():
-    model = models.Doc2Vec.load_word2vec_format(WORD2VEC_FILE_PATH)
-    model.save(DOC2VEC_FILE_PATH)
-
-
-def testTfidfInput():
-    # one file
-    # don't need id -> word
-    # create corpus from tweets
-    # create idf from corpus
-    # write idf, ground truth to file, using pickle
-    inputPath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/twitter_json'
-    samplePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/twitter_json/Airfance.json'
-    dictionarySavePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/dict.dict'
-    corpusSavePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/corpus.mm'
-
-    createCorpusSingleFile(inputPath, dictionarySavePath, corpusSavePath)
-    corpus = loadCorpus(corpusSavePath)
-
-    tfidfSavePath = r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/tfidf.tfidf_model'
-    tfidf = createTfidf(corpus, tfidfSavePath)
-
-    print(tfidf.idfs[1])
-    print(basename(samplePath))
-
-    # to get filename without extension
-    # basename(os.path.splitext(samplePath)[0])
-
-    line = tfidf.idfs, {'label': LABEL_DICT['Airfrance']}
-
-    # write data
-    output = open(r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/output.pkl', 'wb')
-    pickle.dump(line, output)
-    output.close()
-
-    # read data
-    output = open(r'/home/ubuntu/Desktop/Tensorflow/datasets/rumorTest/output.pkl', 'rb')
-    read = pickle.load(output)
-    print(read)
-
-    print(tfidf)
-
-
-    # for line in open(r'../resources/twitter_json/Airfrance.json'):
-    #     line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
-    #     print(line)
-
-
-
-class MySentences(object):
-    def __init__(self, dirname):
-        self.dirname = dirname
-
-    def __iter__(self):
-        for fname in os.listdir(self.dirname):
-            for line in open(os.path.join(self.dirname, fname)):
-                line = re.sub(' "source":(.[^,]+)",', '', line) # remove json.loads corrupters
-                # print('LINEAFTER:' + line)
-                jsonObject = json.loads(line)
-                yield jsonObject['text'].split()
-
-class rumorTextCorpus(corpora.TextCorpus):
+class RumorTextCorpus(corpora.TextCorpus):
 
     def __init__(self, dirname):
         self.dirname = dirname
-        super(rumorTextCorpus, self).__init__(dirname)
+        super(RumorTextCorpus, self).__init__(dirname)
 
 
+    # one line per document
     def get_texts(self):
+        stoplist = set('for a of the and to in'.split()) # add http?
         for fname in os.listdir(self.dirname):
-            self.input = os.path.join(self.dirname, fname)
-            with self.getstream() as lines:
-                for lineno, line in enumerate(lines):
-                    line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
-                    # print('LINEAFTER:' + line)
-                    jsonObject = json.loads(line)
-                    if self.metadata:
-                        yield utils.tokenize(jsonObject['text'], lowercase=True), (lineno,)
-                    else:
-                        yield utils.tokenize(jsonObject['text'], lowercase=True)
+            W = []
+            for line in open(os.path.join(self.dirname, fname)):
+                line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
+                w = json.loads(line)
 
+                # tokenize and remove common words
+                w = utils.tokenize(w['text'], lowercase=True)
+                w = [word for word in w if word not in stoplist]
 
-
-
+                W.extend(w)
+            yield W
 
 if __name__ == "__main__": main()
+
+

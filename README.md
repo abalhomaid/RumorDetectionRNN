@@ -3,37 +3,37 @@
 ## Libraries used
 
 1. gensim
-2. tflearn
-3. keras
-4. pickle
+2. keras
+3. pickle
 
 ## Algorithm
 
 ### Dataset pre-process (preprocessData.py)
 
 1. for each train file f in twitter_json, 
-    1. put value of 'text' key in a list l, do this for all lines
-    2. tfidf = compute tf*idf with l as input
-    3. create tuple t (tfidf, ground_truth of f)
-2. pickle.dump all tuples
+    1. put value of 'text' key in a list X_train, do this for all lines
+    2. Tokenize X_train
+    3. Convert each text in X_train to sequences
+    4. pad X_train
+2. dump X_train and Y_train using pickle
 3. do step 1 and 2 for test every test file
 
 ### Training neural network
 
 1. load trainX, trainY, testX, testY using <code>loadTensorInput()</code> Each item is now a list of list
-2. pad trainX and testX so that each item has the same length (currently 100 because of machine capability but should be around 8000)  
-3. categorize trainY and testY to two classes
-4. build the neural net model using tflearn (LSTM RNN)
+2. categorize trainY and testY to two classes
+3. build the neural net model using tflearn (LSTM RNN)
     1. activation='softmax'
     2. optimizer='adam'
     3. learning_rate=0.001
     4. loss='categorical_crossentropy'
-5. fit the model
-    1. n_epoch=1, due to machine capability
+4. fit the model
+    1. n_epoch=20
+5. save the model
 
 ## before running any file:
 
-1. make sure that the dataset folder is inside the project amd has name 'rumor'
+1. make sure that the dataset folder is inside the project and has name 'rumor'
 
 ![alt tag](images/sampleFileStructure.PNG)
 
@@ -52,37 +52,20 @@
 
 5 epochs
 
-Train on 875 samples, validate on 117 samples
+Train on 875 samples, validate on 118 samples
+
+20 epochs
 
 <code>
-Training samples: 117  
-Validation samples: 875  
-
-7s - loss: 0.6813 - acc: 0.5497 - val_loss: 0.9414 - val_acc: 0.2735
-Epoch 2/5
-2s - loss: 0.6695 - acc: 0.5817 - val_loss: 0.7839 - val_acc: 0.2393
-Epoch 3/5
-2s - loss: 0.6664 - acc: 0.5840 - val_loss: 0.9430 - val_acc: 0.2650
-Epoch 4/5
-2s - loss: 0.6634 - acc: 0.5863 - val_loss: 0.8857 - val_acc: 0.2650
-Epoch 5/5
-2s - loss: 0.6620 - acc: 0.5874 - val_loss: 0.9371 - val_acc: 0.2735
-</code>
-
-
-200 epochs
-
-<code>
-Epoch 196/200
-2s - loss: 0.5914 - acc: 0.6526 - val_loss: 1.0456 - val_acc: 0.3761
-Epoch 197/200
-2s - loss: 0.5843 - acc: 0.6651 - val_loss: 1.1080 - val_acc: 0.3590
-Epoch 198/200
-2s - loss: 0.5659 - acc: 0.6834 - val_loss: 1.0969 - val_acc: 0.3504
-Epoch 199/200
-2s - loss: 0.5607 - acc: 0.6800 - val_loss: 1.0305 - val_acc: 0.3846
-Epoch 200/200
-2s - loss: 0.5562 - acc: 0.6834 - val_loss: 1.0994 - val_acc: 0.3590
-success
+Epoch 17/20
+875/875 [==============================] - 14s - loss: 0.0627 - acc: 0.9840 - val_loss: 0.6850 - val_acc: 0.5678
+Epoch 18/20
+875/875 [==============================] - 14s - loss: 0.0600 - acc: 0.9863 - val_loss: 0.6829 - val_acc: 0.6186
+Epoch 19/20
+875/875 [==============================] - 14s - loss: 0.0595 - acc: 0.9817 - val_loss: 0.6905 - val_acc: 0.6186
+Epoch 20/20
+875/875 [==============================] - 15s - loss: 0.3526 - acc: 0.8960 - val_loss: 0.6753 - val_acc: 0.5932
+118/118 [==============================] - 0s
+Accuracy: 59.32%
 </code>
 Process finished with exit code 0

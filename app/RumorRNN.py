@@ -1,21 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Simple example using LSTM recurrent neural network to classify IMDB
-sentiment dataset.
-
-References:
-    - Long Short Term Memory, Sepp Hochreiter & Jurgen Schmidhuber, Neural
-    Computation 9(8): 1735-1780, 1997.
-    - Andrew L. Maas, Raymond E. Daly, Peter T. Pham, Dan Huang, Andrew Y. Ng,
-    and Christopher Potts. (2011). Learning Word Vectors for Sentiment
-    Analysis. The 49th Annual Meeting of the Association for Computational
-    Linguistics (ACL 2011).
-
-Links:
-    - http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf
-    - http://ai.stanford.edu/~amaas/data/sentiment/
-
-"""
 from __future__ import division, print_function, absolute_import
 
 import tflearn
@@ -31,7 +13,7 @@ from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers import Dense, PReLU, Dropout, Embedding, LSTM, BatchNormalization, TimeDistributed
 
-TENSOR_MODEL = r'../resources/tensorModel.model'
+MODEL_PATH = r'../resources/my_model.h5'
 INPUT_DIM = 200
 OUTPUT_DIM = 2
 NUM_EPOCHS = 25
@@ -39,34 +21,16 @@ NUM_CLASSES = 2
 
 
 def main():
-    # trainModelTFLearn()
     # trainModelKeras()
-    trainModelLGB()
+    # trainModelLGB()
+    trainEmbedding()
 
-def loadModel():
-    print('not yet implemented')
-
-    # net = tflearn.input_data([None, 100])
-    # net = tflearn.embedding(net, input_dim=10000, output_dim=128)
-    # net = tflearn.lstm(net, 128, dropout=0.8)
-    # net = tflearn.fully_connected(net, 2, activation='softmax')
-    # net = tflearn.regression(net, optimizer='adam', learning_rate=0.001,
-    #                          loss='categorical_crossentropy')
-    #
-    # model = tflearn.DNN(net, tensorboard_verbose=0)
-    #
-    # tensorModel = model.load(TENSOR_MODEL + '.meta')
-    #
-    # print('nice!')
-
+""" trains on X using Microsoft's LightGBM"""
 def trainModelLGB():
 
-    X_train, y_train, X_test, y_test = loadTensorInput(RUMOR_TF_INPUTPICKLE)
+    X_train, y_train, X_test, y_test = loadInput(RUMOR_TF_INPUTPICKLE)
     model_txt_path = '../resources/LightGBMModel.txt'
     model_json_path = '../resources/LightGBMModel.json'
-
-    X_train = keraspad_sequences(X_train, maxlen=INPUT_DIM, padding='post', value=0.)
-    X_test = keraspad_sequences(X_test, maxlen=INPUT_DIM, padding='post', value=0.)
 
     # create dataset for lightgbm
     lgb_train = lgb.Dataset(X_train, y_train)
@@ -106,7 +70,7 @@ def trainModelLGB():
     ax = lgb.plot_importance(gbm, max_num_features=10)
     plt.show()
 
-    print('Plot 84th tree...')  # one tree use categorical feature to split
+    print('Plot tree...')  # one tree use categorical feature to split
     ax = lgb.plot_tree(gbm)
     plt.show()
 
@@ -134,8 +98,42 @@ def trainModelLGB():
     print('Feature importances:', list(gbm.feature_importance()))
 
 
+""" trains on X using Keras's embedding layer (X is list of word IDs)"""
+def trainEmbedding():
 
+    MAX_SEQUENCE_LENGTH = 1000
+    EMBEDDING_DIM = 100
+    X_train, y_train, X_test, y_test = loadInput(RUMOR_TF_INPUTPICKLE)
 
+    y_train = to_categorical(y_train, nb_classes=2)
+    y_test = to_categorical(y_test, nb_classes=2)
+
+    # create the model
+    model = Sequential()
+    model.add(Embedding(input_dim=MAX_SEQUENCE_LENGTH, output_dim=EMBEDDING_DIM))
+    model.add(LSTM(100))
+
+    model.add(Dense(784, init='normal'))
+    model.add(PReLU())
+    model.add(Dropout(0.2))
+
+    model.add(Dense(784, init='normal'))
+    model.add(PReLU())
+    model.add(Dropout(0.4))
+
+    model.add(Dense(2, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+    model.fit(X_train, y_train, validation_data=(X_test, y_test), nb_epoch=20, batch_size=64)
+
+    # Final evaluation of the model
+    scores = model.evaluate(X_test, y_test)
+    print("Accuracy: %.2f%%" % (scores[1] * 100))
+
+    # Save model
+    model.save(MODEL_PATH)
+
+""" trains on X using Keras (X is list of word tfidfs), not yet tested"""
 def trainModelKeras():
 
     trainX, trainY, testX, testY = loadTensorInput(RUMOR_TF_INPUTPICKLE)
@@ -207,63 +205,5 @@ def trainModelKeras():
     plt.show()
 
     print('success')
-
-def trainModelTFLearn():
-
-    # Python 2
-    trainX, trainY, testX, testY = loadTensorInput(RUMOR_TF_INPUTPICKLE)
-
-    # Data preprocessing
-    # Sequence padding
-    print(type(trainX))
-
-    trainX = pad_sequences(trainX, maxlen=100, value=0.)
-    testX = pad_sequences(testX, maxlen=100, value=0.)
-
-    print('DONE:pad_sequencing')
-
-    # Converting labels to binary vectors
-    trainY = to_categorical(trainY, nb_classes=2)
-    testY = to_categorical(testY, nb_classes=2)
-
-    print('DONE:to_categorical')
-
-    # # Network building
-    # with tf.device('/gpu:0'):
-    net = tflearn.input_data([None, 100])
-    net = tflearn.embedding(net, input_dim=10000, output_dim=128)
-    net = tflearn.lstm(net, 128, dropout=0.8)
-    net = tflearn.fully_connected(net, 2, activation='softmax')
-    net = tflearn.regression(net, optimizer='adam', learning_rate=0.001,
-                             loss='categorical_crossentropy')
-
-    # # Training
-    model = tflearn.DNN(net, tensorboard_verbose=0)
-    model.fit(trainX, trainY, validation_set=(testX, testY), show_metric=True,
-              batch_size=32, n_epoch=1)
-
-    model.save(TENSOR_MODEL)
-    print('done')
-
-def printLargestSmallestNumElements(list):
-    largest = 0
-    smallest = 100000
-    i = 0
-    j = 0
-    for idx, x in enumerate(list):
-        if len(x) > largest:
-            largest = len(x)
-            i = idx
-
-        if len(x) < smallest:
-            smallest = len(x)
-            j = idx
-
-    print('largest number of elements:', largest)
-    print('index:', i)
-    print('--------------------')
-    print('smallest number of elements:', smallest)
-    print('index:', j)
-
 
 if __name__ == "__main__": main()
