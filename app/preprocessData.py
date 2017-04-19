@@ -27,8 +27,8 @@ EMBEDDING_DIM = 100
 
 
 def main():
-    # createInputKeras(RUMOR_TF_INPUTPICKLE)
-    loadInput(RUMOR_TF_INPUTPICKLE)
+    createInputKeras(RUMOR_TF_INPUTPICKLE)
+    # loadInput(RUMOR_TF_INPUTPICKLE)
     # createInput(RUMOR_TF_INPUTPICKLE)
     print('Done preprocessing.')
 
