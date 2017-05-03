@@ -73,7 +73,10 @@ def trainEmbedding():
     model = build_model()
 
     # model.load_weights('../weight_adam/weights.06-0.86.hdf5')
-    model.load_weights('../weight_sgd/weights.07-0.70-0.51.hdf5')
+    # model.load_weights('../weight_adam/weights.12-0.62.hdf5')
+    # model.load_weights('../weight_sgd/weights.22-0.63-0.82.hdf5')
+    model.load_weights('../weight_adagrad/weights.10-0.66-0.72.hdf5')
+
     sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     adagrad = optimizers.Adagrad(lr=0.01, epsilon=1e-08, decay=0.0)
     adadelta = optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=1e-8, decay=0.)
@@ -89,7 +92,7 @@ def trainEmbedding():
 
 
 def plot_keras_model():
-    model = load_model(MODEL_PATH)
+    model = build_model()
     plot_model(model, to_file='model.png')
 
 if __name__ == "__main__": main()
