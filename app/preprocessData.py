@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 import logging
@@ -7,8 +8,10 @@ import numpy as np
 
 from gensim import corpora, utils
 from gensim.corpora import MmCorpus
+from dateutil import parser
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -27,13 +30,17 @@ EMBEDDING_DIM = 100
 
 
 def main():
-    createInputKeras(RUMOR_TF_INPUTPICKLE)
+    # createInputKeras(RUMOR_TF_INPUTPICKLE)
     # loadInput(RUMOR_TF_INPUTPICKLE)
     # createInput(RUMOR_TF_INPUTPICKLE)
+    E = getSequenceFromFile('../rumor/twitter_json/Airfrance.json')
+    time_series = variable_length_time_series(E, N=100)
+    test = create_tfidfs(time_series)
     print('Done preprocessing.')
 
 """load all labels (true/false) for training and test set into LABEL_DICT"""
-def loadLabels(labelPath, write = 0):
+"""creates a dictionary Filename: label"""
+def loadLabels(labelPath):
     LABEL_DICT = {}
     with open(labelPath) as infile:
         for line in infile:
@@ -126,8 +133,10 @@ def createInput(inputFile):
 def createInputKeras(inputFile):
     X_train = []
     y_train = []
+
     X_test = []
     y_test = []
+
     LABEL_DICT = loadLabels(TWITTER_LABEL_PATH)
 
     # load train filenames into list
@@ -166,6 +175,77 @@ def createInputKeras(inputFile):
         pickle.dump((X_train, y_train), output)
         pickle.dump((X_test, y_test), output)
 
+
+""" Implements section 4.3 in the paper http://www.ijcai.org/Proceedings/16/Papers/537.pdf"""
+def create_tfidfs(time_series):
+    tfidf_series = []
+    for interval in time_series:
+        document = []
+        for post in interval:
+            document.append(post[0])
+        word_count_vector = CountVectorizer().fit_transform(document)
+        tfidf_transformer = TfidfTransformer()
+        tfidf_vector = tfidf_transformer.fit_transform(word_count_vector)
+        tfidf_series.append(tfidf_vector)
+    return tfidf_series
+
+
+""" Constructs variable length time series similar to section 4.2 in the paper http://www.ijcai.org/Proceedings/16/Papers/537.pdf"""
+""" E: relevant posts (m_ij, t_ij)"""
+""" N: reference length of RNN """
+def variable_length_time_series(E, N):
+    # Initialization
+    L = (E[-1][1] - E[0][1]).total_seconds() // 60 # difference of time between last post and first post convert to minutes
+    # L = (L.days*24*60) + (L.seconds // 60) #
+    l = L // N # initial intervals
+    l = int(l)
+    k = 0
+    U_hat_prev = []
+    while True:
+        k = k + 1
+        U_k = Equipartition(E, N, l)
+        U_hat_k = find_longest_time_span(U_k, l)
+        if(len(U_hat_k) < N and len(U_hat_k) > len(U_hat_prev)):
+            # shorten the intervals
+            l = l // 2
+            U_hat_prev = U_hat_k
+        else:
+            # generate output
+            return U_hat_k
+
+def Equipartition(E, N, l):
+    U_k = []
+    for i in range(N): # create N lists
+        list = []
+        for idx, rp in enumerate(E):
+            left_most = datetime.timedelta(minutes = i*l) + E[0][1]
+            right_most = datetime.timedelta(minutes = (i+1)*l) + E[0][1]
+            if(left_most <= rp[1] and rp[1] < right_most):
+                list.append(rp)
+        U_k.append(list)
+    return U_k
+
+def find_longest_time_span(U_k, l):
+    U_hat_k = []
+
+    max_time_span_index = 0
+    max_count = 0
+    count = 0
+
+    for idx, time_interval in enumerate(U_k):
+        if time_interval:
+            count = count + 1
+        else:
+            if count > max_count:
+                max_count = count
+                max_time_span_index = idx - count
+            count = 0
+
+    for i in range(max_time_span_index, max_time_span_index + max_count): # add longest time span to U_hat
+        U_hat_k.append(U_k[i])
+
+    return U_hat_k
+
 def createCorpus(inputPath):
     corpus = RumorTextCorpus(inputPath)
     MmCorpus.serialize(CORPUS_FILE_PATH, corpus)
@@ -173,13 +253,19 @@ def createCorpus(inputPath):
     return corpus
 
 def getSequenceFromFile(file_path):
-    W = []
+    E = []
     for line in open(file_path):
         line = re.sub(' "source":(.[^,]+)",', '', line)  # remove json.loads corrupters
         jsonObject = json.loads(line)
-        w = jsonObject['text'].split()
-        W.extend(w)
-    return W
+
+        post = jsonObject['text']
+        timestamp = jsonObject['created_at']
+        timestamp = parser.parse(timestamp)
+
+        e = (post, timestamp)
+        E.append(e)
+    E.sort(key=lambda x: x[1])
+    return E
 
 def getTextFromFile(file_path):
     W = ''
